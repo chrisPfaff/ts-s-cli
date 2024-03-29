@@ -15,8 +15,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getArtistInfo = exports.promptKeys = void 0;
 require("dotenv/config");
 const chalk_1 = __importDefault(require("chalk"));
-const fs_1 = __importDefault(require("fs"));
+const promises_1 = __importDefault(require("fs/promises"));
 const inquirer_1 = __importDefault(require("inquirer"));
+const path_1 = __importDefault(require("path"));
+const sharp_1 = __importDefault(require("sharp"));
 const promptKeys = () => {
     return inquirer_1.default
         .prompt([
@@ -51,7 +53,7 @@ const promptKeys = () => {
             return json.access_token;
         });
         getToken().then((token) => {
-            fs_1.default.writeFileSync(".env", `TOKEN=${token}`);
+            promises_1.default.writeFile(".env", `TOKEN=${token}`);
             console.log(chalk_1.default.bold.greenBright("Client ID and Secret Saved"));
         });
     });
@@ -79,7 +81,19 @@ const getArtistInfo = () => {
           https://developer.spotify.com/documentation/web-api/concepts/apps
           `));
         }
-        return yield response.json();
+        const data = yield response.json();
+        const imageURL = data.artists.items[0].images[1].url;
+        const image = yield fetch(imageURL);
+        if (!image.ok) {
+            throw new Error("Image not fetched successfully");
+        }
+        console.log(path_1.default.resolve(__dirname, "../images/data.jpg"));
+        const buffer = yield image.arrayBuffer();
+        const bufferImage = Buffer.from(buffer);
+        const fullImage = (0, sharp_1.default)(bufferImage);
+        yield fullImage.toFile(path_1.default.resolve(__dirname, "../img/data.jpg"));
+        console.log(chalk_1.default.bold.greenBright("Image saved"));
+        return data;
     }));
 };
 exports.getArtistInfo = getArtistInfo;

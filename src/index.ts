@@ -6,7 +6,6 @@ import { getArtistInfo, promptKeys } from "./utils/util";
 
 import { Command } from "commander";
 import inquirer from "inquirer";
-import process from "node:process";
 
 const program = new Command();
 

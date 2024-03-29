@@ -1,9 +1,10 @@
 import "dotenv/config";
 
 import chalk from "chalk";
-import fs from "fs";
-import { get } from "node:http";
+import fs from "fs/promises";
 import inquirer from "inquirer";
+import path from "path";
+import sharp from "sharp";
 
 const promptKeys = () => {
   return inquirer
@@ -42,7 +43,7 @@ const promptKeys = () => {
         return json.access_token;
       };
       getToken().then((token) => {
-        fs.writeFileSync(".env", `TOKEN=${token}`);
+        fs.writeFile(".env", `TOKEN=${token}`);
         console.log(chalk.bold.greenBright("Client ID and Secret Saved"));
       });
     });
@@ -75,7 +76,19 @@ const getArtistInfo = () => {
           `)
         );
       }
-      return await response.json();
+      const data = await response.json();
+      const imageURL = data.artists.items[0].images[1].url;
+      const image = await fetch(imageURL);
+      if (!image.ok) {
+        throw new Error("Image not fetched successfully");
+      }
+      console.log(path.resolve(__dirname, "../images/data.jpg"));
+      const buffer = await image.arrayBuffer();
+      const bufferImage = Buffer.from(buffer);
+      const fullImage = sharp(bufferImage);
+      await fullImage.toFile(path.resolve(__dirname, "../img/data.jpg"));
+      console.log(chalk.bold.greenBright("Image saved"));
+      return data;
     });
 };
 
