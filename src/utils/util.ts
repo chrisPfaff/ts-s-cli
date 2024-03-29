@@ -61,7 +61,6 @@ const getArtistInfo = () => {
     .then(async (answers) => {
       const artist = answers.artist;
       const token = process.env.TOKEN;
-      console.log(artist, token);
       const response = await fetch(
         `https://api.spotify.com/v1/search?q=${artist}&type=artist&limit=1`,
         {
@@ -82,12 +81,10 @@ const getArtistInfo = () => {
       if (!image.ok) {
         throw new Error("Image not fetched successfully");
       }
-      console.log(path.resolve(__dirname, "../images/data.jpg"));
       const buffer = await image.arrayBuffer();
       const bufferImage = Buffer.from(buffer);
       const fullImage = sharp(bufferImage);
       await fullImage.toFile(path.resolve(__dirname, "../img/data.jpg"));
-      console.log(chalk.bold.greenBright("Image saved"));
       return data;
     });
 };

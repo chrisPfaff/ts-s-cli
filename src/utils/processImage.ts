@@ -1,7 +1,9 @@
 #!/usr/bin/env node
+const { exec } = require("child_process");
 
-import { Command } from "commander";
-import fs from "fs";
-const program = new Command();
+const showImage = async (path: string) => {
+  console.log("show image", path);
+  exec(`imgcat ${path}`);
+};
 
-const showImage = (path: string) => {};
+export default showImage;

@@ -71,7 +71,6 @@ const getArtistInfo = () => {
         .then((answers) => __awaiter(void 0, void 0, void 0, function* () {
         const artist = answers.artist;
         const token = process.env.TOKEN;
-        console.log(artist, token);
         const response = yield fetch(`https://api.spotify.com/v1/search?q=${artist}&type=artist&limit=1`, {
             method: "GET",
             headers: { Authorization: "Bearer " + token },
@@ -87,12 +86,10 @@ const getArtistInfo = () => {
         if (!image.ok) {
             throw new Error("Image not fetched successfully");
         }
-        console.log(path_1.default.resolve(__dirname, "../images/data.jpg"));
         const buffer = yield image.arrayBuffer();
         const bufferImage = Buffer.from(buffer);
         const fullImage = (0, sharp_1.default)(bufferImage);
         yield fullImage.toFile(path_1.default.resolve(__dirname, "../img/data.jpg"));
-        console.log(chalk_1.default.bold.greenBright("Image saved"));
         return data;
     }));
 };

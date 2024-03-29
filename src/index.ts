@@ -5,7 +5,8 @@ import "dotenv/config";
 import { getArtistInfo, promptKeys } from "./utils/util";
 
 import { Command } from "commander";
-import inquirer from "inquirer";
+import path from "path";
+import showImage from "./utils/processImage";
 
 const program = new Command();
 
@@ -26,6 +27,6 @@ program
   .description("Get artist info")
   .action(async () => {
     const res = await getArtistInfo();
-    console.log(res.artists.items[0].images);
+    showImage(path.resolve(__dirname, "../bin/img/data.jpg"));
   });
 program.parse();
