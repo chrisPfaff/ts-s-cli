@@ -1,11 +1,8 @@
 import "dotenv/config";
 
 import chalk from "chalk";
-import { exec } from "child_process";
 import fs from "fs/promises";
 import inquirer from "inquirer";
-import path from "path";
-import sharp from "sharp";
 
 const promptKeys = () => {
   return inquirer
@@ -77,20 +74,7 @@ const getArtistInfo = () => {
         );
       }
       const data = await response.json();
-      const imageURL = data.artists.items[0].images[2].url;
-      exec(`curl -s  ${imageURL}| imgcat`, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`exec error: ${error}`);
-          return;
-        }
-        console.log(`
-            ${chalk.bold.greenBright("Artist Name:")} ${
-          data.artists.items[0].name
-        } 
-            ${stdout}
-            `);
-      });
-      return data;
+      return data.artists.items[0];
     });
 };
 

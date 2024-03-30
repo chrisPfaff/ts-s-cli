@@ -5,7 +5,8 @@ import "dotenv/config";
 import { getArtistInfo, promptKeys } from "./utils/util";
 
 import { Command } from "commander";
-import path from "path";
+import chalk from "chalk";
+import { exec } from "child_process";
 
 const program = new Command();
 
@@ -26,6 +27,23 @@ program
   .description("Get artist info")
   .action(async () => {
     const res = await getArtistInfo();
-    console.log(res);
+    const imageURL = res.images[0].url;
+    const name = res.name;
+    exec(`curl -s  ${imageURL}| imgcat`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return;
+      }
+      console.log(` 
+          \n ${chalk.bold.greenBright(`Artist Name:`)}${name} 
+          ${stdout}
+          \n ${chalk.bold.blueBright("Followers:")} ${res.followers.total}
+          \n ${chalk.bold.yellowBright("Popularity:")} ${res.popularity} 
+          \n ${chalk.bold.cyanBright("Genres:")} ${res.genres}
+          \n ${chalk.bold.magentaBright("Spotify URL:")} ${
+        res.external_urls.spotify
+      }
+          `);
+    });
   });
 program.parse();
