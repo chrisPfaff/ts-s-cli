@@ -6,7 +6,6 @@ import { getArtistInfo, promptKeys } from "./utils/util";
 
 import { Command } from "commander";
 import path from "path";
-import showImage from "./utils/processImage";
 
 const program = new Command();
 
@@ -27,6 +26,6 @@ program
   .description("Get artist info")
   .action(async () => {
     const res = await getArtistInfo();
-    showImage(path.resolve(__dirname, "../bin/img/data.jpg"));
+    console.log(res);
   });
 program.parse();

@@ -15,10 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getArtistInfo = exports.promptKeys = void 0;
 require("dotenv/config");
 const chalk_1 = __importDefault(require("chalk"));
+const child_process_1 = require("child_process");
 const promises_1 = __importDefault(require("fs/promises"));
 const inquirer_1 = __importDefault(require("inquirer"));
-const path_1 = __importDefault(require("path"));
-const sharp_1 = __importDefault(require("sharp"));
 const promptKeys = () => {
     return inquirer_1.default
         .prompt([
@@ -81,15 +80,17 @@ const getArtistInfo = () => {
           `));
         }
         const data = yield response.json();
-        const imageURL = data.artists.items[0].images[1].url;
-        const image = yield fetch(imageURL);
-        if (!image.ok) {
-            throw new Error("Image not fetched successfully");
-        }
-        const buffer = yield image.arrayBuffer();
-        const bufferImage = Buffer.from(buffer);
-        const fullImage = (0, sharp_1.default)(bufferImage);
-        yield fullImage.toFile(path_1.default.resolve(__dirname, "../img/data.jpg"));
+        const imageURL = data.artists.items[0].images[2].url;
+        (0, child_process_1.exec)(`curl -s  ${imageURL}| imgcat`, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`exec error: ${error}`);
+                return;
+            }
+            console.log(`
+            ${chalk_1.default.bold.greenBright("Artist Name:")} ${data.artists.items[0].name} 
+            ${stdout}
+            `);
+        });
         return data;
     }));
 };
