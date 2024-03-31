@@ -1,6 +1,8 @@
 import "dotenv/config";
 
+import { SpotifyTrack } from "../../types/SpotifyTrackType";
 import chalk from "chalk";
+import { exec } from "child_process";
 import fs from "fs/promises";
 import inquirer from "inquirer";
 
@@ -8,12 +10,12 @@ const promptKeys = () => {
   return inquirer
     .prompt([
       {
-        type: "input",
+        type: "password",
         name: "clientID",
         message: "Enter your Spotify Client ID",
       },
       {
-        type: "input",
+        type: "password",
         name: "secret",
         message: "Enter your Spotify Client Secret",
       },
@@ -57,6 +59,7 @@ const getArtistInfo = () => {
       },
     ])
     .then(async (answers) => {
+      console.log(answers.artist);
       const artist = answers.artist;
       const token = process.env.TOKEN;
       const response = await fetch(
@@ -73,9 +76,46 @@ const getArtistInfo = () => {
           `)
         );
       }
+      //https://api.spotify.com/v1/artists/0TnOYISbd1XYRBk9myaseg/top-tracks
       const data = await response.json();
-      return data.artists.items[0];
+
+      const fetchTopTracks = await fetch(
+        `https://api.spotify.com/v1/artists/${data.artists.items[0].id}/top-tracks`,
+        {
+          method: "GET",
+          headers: { Authorization: "Bearer " + token },
+        }
+      );
+      const topTracks = await fetchTopTracks.json();
+
+      return { data: data.artists.items[0], tracks: topTracks };
     });
 };
 
-export { promptKeys, getArtistInfo };
+const playSong = async () => {
+  const players = [
+    "mplayer",
+    "afplay",
+    "mpg123",
+    "mpg321",
+    "play",
+    "omxplayer",
+    "aplay",
+    "cmdmp3",
+    "cvlc",
+    "powershell",
+  ];
+  const player = new Promise((resolve, reject) => {
+    players.forEach((player) => {
+      exec(`which ${player}`, (error, stdout, stderr) => {
+        if (stdout !== "") {
+          resolve(player);
+        }
+      });
+    });
+  });
+  const finalPlayer = await player;
+  console.log(finalPlayer);
+};
+
+export { promptKeys, getArtistInfo, playSong };

@@ -27,13 +27,17 @@ program
     .command("keys")
     .description("Input client ID and Secret from https://developer.spotify.com/dashboard/applications")
     .action(util_1.promptKeys);
+program.command("play").description("Play song on Spotify").action(util_1.playSong);
 program
     .command("artist")
     .description("Get artist info")
     .action(() => __awaiter(void 0, void 0, void 0, function* () {
     const res = yield (0, util_1.getArtistInfo)();
-    const imageURL = res.images[0].url;
-    const name = res.name;
+    const imageURL = res.data.images[0].url;
+    const name = res.data.name;
+    const topTracks = res.tracks.tracks.map((track) => {
+        return track.name;
+    });
     (0, child_process_1.exec)(`curl -s  ${imageURL}| imgcat`, (error, stdout, stderr) => {
         if (error) {
             console.error(`exec error: ${error}`);
@@ -42,10 +46,11 @@ program
         console.log(` 
           \n ${chalk_1.default.bold.greenBright(`Artist Name:`)}${name} 
           ${stdout}
-          \n ${chalk_1.default.bold.blueBright("Followers:")} ${res.followers.total}
-          \n ${chalk_1.default.bold.yellowBright("Popularity:")} ${res.popularity} 
-          \n ${chalk_1.default.bold.cyanBright("Genres:")} ${res.genres}
-          \n ${chalk_1.default.bold.magentaBright("Spotify URL:")} ${res.external_urls.spotify}
+          \n ${chalk_1.default.bold.blueBright("Followers:")} ${res.data.followers.total}
+          \n ${chalk_1.default.bold.yellowBright("Popularity:")} ${res.data.popularity} 
+          \n ${chalk_1.default.bold.cyanBright("Genres:")} ${res.data.genres}
+          \n ${chalk_1.default.bold.magentaBright("Spotify URL:")} ${res.data.external_urls.spotify}
+          \n ${chalk_1.default.bold.redBright("Top Tracks:")} ${topTracks.join(", ")}
           `);
     });
 }));
