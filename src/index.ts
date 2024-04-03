@@ -2,14 +2,16 @@
 
 import "dotenv/config";
 
-import { getArtistInfo, playSong, promptKeys } from "./utils/util";
+import { chooseTrack, getArtistInfo, playSong, promptKeys } from "./utils/util";
 
 import { Command } from "commander";
 import { SpotifyTrack } from "../types/SpotifyTrackType";
 import chalk from "chalk";
 import { exec } from "child_process";
+import fs from "fs/promises";
 
 const program = new Command();
+let tracks: string[] = [];
 
 program
   .name("Spotify-info-cli")
@@ -26,6 +28,11 @@ program
 program.command("play").description("Play song on Spotify").action(playSong);
 
 program
+  .command("choose")
+  .description("Choose a Track to get Song")
+  .action(chooseTrack);
+
+program
   .command("artist")
   .description("Get artist info")
   .action(async () => {
@@ -33,8 +40,13 @@ program
     const imageURL = res.data.images[0].url;
     const name = res.data.name;
     const topTracks = res.tracks.tracks.map((track: SpotifyTrack) => {
+      tracks.push(track.name);
       return track.name;
     });
+    fs.writeFile(
+      ".env",
+      `TOKEN=${process.env.TOKEN} \n TRACK=${tracks.join(",")}`
+    );
     exec(`curl -s  ${imageURL}| imgcat`, (error, stdout, stderr) => {
       if (error) {
         console.error(`exec error: ${error}`);
@@ -53,4 +65,5 @@ program
           `);
     });
   });
+
 program.parse();

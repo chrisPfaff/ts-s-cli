@@ -1,10 +1,17 @@
 import "dotenv/config";
 
-import { SpotifyTrack } from "../../types/SpotifyTrackType";
+import Ffmpeg from "fluent-ffmpeg";
 import chalk from "chalk";
 import { exec } from "child_process";
-import fs from "fs/promises";
+import fs from "fs";
 import inquirer from "inquirer";
+import path from "path";
+import puppeteer from "puppeteer-extra";
+import puppeteerStealth from "puppeteer-extra-plugin-stealth";
+import { spawn } from "child_process";
+import ytdl from "ytdl-core";
+
+const command = Ffmpeg();
 
 const promptKeys = () => {
   return inquirer
@@ -43,8 +50,13 @@ const promptKeys = () => {
         return json.access_token;
       };
       getToken().then((token) => {
-        fs.writeFile(".env", `TOKEN=${token}`);
-        console.log(chalk.bold.greenBright("Client ID and Secret Saved"));
+        fs.writeFile(".env", `TOKEN=${token} \n TRACK=`, (err) => {
+          if (err) {
+            console.error(err);
+          } else {
+            console.log(chalk.bold.greenBright("Client ID and Secret Saved"));
+          }
+        });
       });
     });
 };
@@ -59,7 +71,6 @@ const getArtistInfo = () => {
       },
     ])
     .then(async (answers) => {
-      console.log(answers.artist);
       const artist = answers.artist;
       const token = process.env.TOKEN;
       const response = await fetch(
@@ -93,6 +104,7 @@ const getArtistInfo = () => {
 };
 
 const playSong = async () => {
+  console.log(chalk.bold.greenBright("Playing song.."));
   const players = [
     "mplayer",
     "afplay",
@@ -114,8 +126,126 @@ const playSong = async () => {
       });
     });
   });
-  const finalPlayer = await player;
-  console.log(finalPlayer);
+
+  const { spawn } = require("child_process");
+
+  const filePath =
+    "/Users/christopherpfaff/ImportantProjects/ts-s-cli/audio.mp3";
+  const player1 = spawn("afplay", [filePath]);
+
+  player1.on("error", (error: Error) => {
+    console.error(`spawn error: ${error}`);
+  });
+
+  player1.stdout.on("data", (data: string) => {
+    console.log(`stdout: ${data}`);
+  });
+
+  player1.stderr.on("data", (data: string) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  player1.on("close", (code: string) => {
+    console.log(`child process exited with code ${code}`);
+  });
+
+  // const filePath =
+  //   "/Users/christopherpfaff/Important\\ Projects/ts-s-cli/audio.mp3";
+  // const command = `afplay ${filePath}`;
+  // exec(command, (error, stdout, stderr) => {
+  //   if (error) {
+  //     console.error(`exec error: ${error}`);
+  //     return;
+  //   }
+  //   console.log(`stdout: ${stdout}`);
+  //   console.error(`stderr: ${stderr}`);
+  // });
+  // const finalPlayer = "afplay"; // Make sure this is the correct command
+  // const player1 = spawn("afplay", [
+  //   "/Users/christopherpfaff/Important Projects/audio.mp3",
+  // ]);
+
+  // player1.on("error", (error) => {
+  //   console.error(`spawn error: ${error}`);
+  // });
+
+  // player1.stdout.on("data", (data) => {
+  //   console.log(`stdout: ${data}`);
+  // });
+
+  // player1.stderr.on("data", (data) => {
+  //   console.error(`stderr: ${data}`);
+  // });
+
+  // player1.on("close", (code) => {
+  //   console.log(`child process exited with code ${code}`);
+  // });
+  // exec(
+  //   '/usr/bin/afplay "/Users/christopherpfaff/Important Projects/ts-s-cli/audio.mp3"',
+  //   (error, stdout, stderr) => {
+  //     if (error) {
+  //       console.error(`exec error: ${error}`);
+  //       return;
+  //     }
+  //     console.log(`stdout: ${stdout}`);
+  //     console.error(`stderr: ${stderr}`);
+  //   }
+  // );
 };
 
-export { promptKeys, getArtistInfo, playSong };
+const chooseTrack = async () => {
+  if (!process.env.TRACK) {
+    console.log(
+      chalk.bold.redBright(
+        "Please run the artist command first to get the top tracks"
+      )
+    );
+    return;
+  }
+  const tracks = process.env.TRACK.split(",");
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "track",
+        choices: tracks,
+      },
+    ])
+    .then((answer) => {
+      puppeteer.use(puppeteerStealth());
+      puppeteer.launch({ headless: true }).then(async (browser) => {
+        const page = await browser.newPage();
+        await page.goto(
+          "https://www.youtube.com/results?search_query=" +
+            answer.track +
+            " official video"
+        );
+        await page.waitForSelector("#video-title");
+        await page.click("#video-title");
+        const url = await page.url();
+        await browser.close();
+        ytdl(url, { filter: "audioonly" })
+          .pipe(fs.createWriteStream("video.mp3"))
+          .on("finish", () => {
+            console.log(chalk.bold.greenBright("Song Downloaded"));
+            const ffmpegConvert = new Promise((resolve, reject) => {
+              exec(
+                `ffmpeg -i video.mp3 -vn -ab 128k -ar 44100 -y audio.mp3`,
+                (error) => {
+                  if (error) {
+                    reject(error);
+                  } else {
+                    resolve("done");
+                  }
+                }
+              );
+            });
+            ffmpegConvert.then(() => {
+              playSong();
+            });
+          });
+      });
+    });
+};
+
+export { promptKeys, getArtistInfo, playSong, chooseTrack };

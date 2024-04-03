@@ -18,7 +18,9 @@ const util_1 = require("./utils/util");
 const commander_1 = require("commander");
 const chalk_1 = __importDefault(require("chalk"));
 const child_process_1 = require("child_process");
+const promises_1 = __importDefault(require("fs/promises"));
 const program = new commander_1.Command();
+let tracks = [];
 program
     .name("Spotify-info-cli")
     .description("CLI to search spotify artist info")
@@ -29,6 +31,10 @@ program
     .action(util_1.promptKeys);
 program.command("play").description("Play song on Spotify").action(util_1.playSong);
 program
+    .command("choose")
+    .description("Choose a Track to get Song")
+    .action(util_1.chooseTrack);
+program
     .command("artist")
     .description("Get artist info")
     .action(() => __awaiter(void 0, void 0, void 0, function* () {
@@ -36,8 +42,10 @@ program
     const imageURL = res.data.images[0].url;
     const name = res.data.name;
     const topTracks = res.tracks.tracks.map((track) => {
+        tracks.push(track.name);
         return track.name;
     });
+    promises_1.default.writeFile(".env", `TOKEN=${process.env.TOKEN} \n TRACK=${tracks.join(",")}`);
     (0, child_process_1.exec)(`curl -s  ${imageURL}| imgcat`, (error, stdout, stderr) => {
         if (error) {
             console.error(`exec error: ${error}`);
